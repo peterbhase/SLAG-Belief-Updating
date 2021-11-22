@@ -1,0 +1,36 @@
+STEP 1: set DATA_DIR and CODE_DIR environment variables
+export DATA_DIR='data_dir'
+export CODE_DIR='code_dir'
+
+STEP 2: download and construct data
+
+# FEVER and ZSRE
+cd $DATA_DIR
+git clone https://github.com/facebookresearch/KILT.git
+cd KILT
+mkdir data
+python scripts/download_all_kilt_data.py
+mv data/* ./
+cd $CODE_DIR
+python data_utils/shuffle_fever_splits.py
+python data_utils/shuffle_zsre_splits.py
+
+# Leap-Of-Thought
+cd $DATA_DIR
+git clone https://github.com/alontalmor/LeapOfThought.git
+cd LeapOfThought
+python -m LeapOfThought.run -c Hypernyms --artiset_module soft_reasoning -o build_artificial_dataset -v training_mix -out taxonomic_reasonings.jsonl.gz
+gunzip taxonomic_reasonings_training_mix_train.jsonl.gz taxonomic_reasonings_training_mix_dev.jsonl.gz taxonomic_reasonings_training_mix_test.jsonl.gz taxonomic_reasonings_training_mix_meta.jsonl.gz
+cd $CODE_DIR
+python data_utils/shuffle_leapofthought_splits.py
+
+# Wikidata5m
+cd $DATA_DIR
+mkdir Wikidata5m
+cd Wikidata5m
+wget https://www.dropbox.com/s/6sbhm0rwo4l73jq/wikidata5m_transductive.tar.gz
+wget https://www.dropbox.com/s/lnbhc8yuhit4wm5/wikidata5m_alias.tar.gz
+tar -xvzf wikidata5m_transductive.tar.gz
+tar -xvzf wikidata5m_alias.tar.gz
+cd $CODE_DIR
+python data_utils/filter_wikidata.py

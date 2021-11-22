@@ -1,0 +1,12 @@
+numpy
+pandas
+jsonlines
+argparse
+allennlp==2.3
+spacy
+transformers==4.5.1
+networkx
+matplotlib
+higher
+pdbpp
+submitit

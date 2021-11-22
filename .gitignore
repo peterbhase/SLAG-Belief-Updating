@@ -1,0 +1,5 @@
+training_reports/*
+slurm_logs/*
+aggregated_results/*
+result_sheets/*
+outputs/*
