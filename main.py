@@ -174,10 +174,12 @@ def train_or_test(args, stats_dict, epoch, model, data_loader, tokenizer, optimi
         all_before_preds = np.array([point[pred_name] for point in jsonlines.open(data_path)])
         if args.dataset == 'Wikidata5m':
             all_independent_preds = utils.flip_array_pairwise(all_before_preds) # only holds with our pairwise writing of the dev/test splits for Wikidata5m
-        if args.dataset == 'LeapOfThought':
+        if args.dataset == 'LeapOfThought' and not args.write_graph_to_file:
             data_path = getattr(args, f"{split_name}_path")
             pred_name = f'{args.base_experiment_name}_hypothesis_pred'
             all_odp_preds = np.array([point[pred_name] for point in jsonlines.open(data_path)])
+        else:
+            all_odp_preds = None
     else:
         all_before_preds = None
         all_odp_preds = None
@@ -190,8 +192,6 @@ def train_or_test(args, stats_dict, epoch, model, data_loader, tokenizer, optimi
         model.eval()
     
     for batch_num, batch in enumerate(data_loader):
-        # if epoch_stats['n_dependent_points'] > 0:
-        #     print(args.leapofthought_main)
         running_time = (time.time()-start_time)
         est_epoch_run_time = (running_time/(batch_num+1)*n_batches)
         batch_size = batch['main_input_ids'].size(0)
@@ -567,9 +567,10 @@ def train_or_test(args, stats_dict, epoch, model, data_loader, tokenizer, optimi
                                     epoch_stats['other_dependent_acc_sum'] += output_metrics['orig_acc_sum']
                                     epoch_stats['n_other_dependent_points'] += output_metrics['n_points']
                                     odp_batch_ids = odp_batch['id'].cpu().numpy()
-                                    before_odp_preds = all_odp_preds[odp_batch_ids]
-                                    after_odp_preds = output_metrics['preds']
-                                    _, odp_binary_retained = metrics.compute_acc_sum(args.probing_style, before_odp_preds, after_odp_preds, tokenizer, return_where_correct=True)                                
+                                    if all_odp_preds is not None:
+                                        before_odp_preds = all_odp_preds[odp_batch_ids]
+                                        after_odp_preds = output_metrics['preds']
+                                        _, odp_binary_retained = metrics.compute_acc_sum(args.probing_style, before_odp_preds, after_odp_preds, tokenizer, return_where_correct=True)                                
                                     for pos, idx in enumerate(range(len(odp_batch_ids))):
                                         data_id = odp_batch['id'][idx].item()
                                         if 'after_odp_acc' not in id_to_stats[data_id]:
@@ -577,11 +578,12 @@ def train_or_test(args, stats_dict, epoch, model, data_loader, tokenizer, optimi
                                         else:
                                             id_to_stats[data_id]['after_odp_acc'] += ' ' + str(1*output_metrics['orig_binary_correct'][pos])
                                             id_to_stats[data_id]['after_odp_acc_mean'] = np.mean([float(x) for x in id_to_stats[data_id]['after_odp_acc'].split()])
-                                        if 'after_odp_ret' not in id_to_stats[data_id]:
-                                            id_to_stats[data_id]['after_odp_ret'] = str(1*odp_binary_retained[idx])
-                                        else:
-                                            id_to_stats[data_id]['after_odp_ret'] += ' ' + str(1*odp_binary_retained[idx])
-                                            id_to_stats[data_id]['after_odp_ret_mean'] = np.mean([float(x) for x in id_to_stats[data_id]['after_odp_ret'].split()])
+                                        if all_odp_preds is not None:
+                                            if 'after_odp_ret' not in id_to_stats[data_id]:
+                                                id_to_stats[data_id]['after_odp_ret'] = str(1*odp_binary_retained[idx])
+                                            else:
+                                                id_to_stats[data_id]['after_odp_ret'] += ' ' + str(1*odp_binary_retained[idx])
+                                                id_to_stats[data_id]['after_odp_ret_mean'] = np.mean([float(x) for x in id_to_stats[data_id]['after_odp_ret'].split()])
                                     all_odp_accs.extend(output_metrics['orig_binary_correct'])
                                 id_to_stats[updated_id]['oth_odp_acc'] = ' '.join([f"{other_id}-{str(1*correct)}" for other_id, correct in zip(odp_sample_ids, all_odp_accs)])
                             if 'independent_proposition' in data_names:
@@ -938,9 +940,6 @@ if __name__ == '__main__':
     if args.learned_successive_updates > 1 and args.do_train: assert args.grad_accumulation_factor >= args.learned_successive_updates, "grad accum factor must be at least learned_successive_updates"
     if args.use_learned_optimizer and args.num_successive_updates > 1 and args.do_train:
         print("\nNote that train update success is NOT calculated after num_successive_updates, but rather after every single update, so not comparable to dev upd_suc \n")
-
-    # add dataset-specific parameters to args
-    utils.add_dataset_config_to_args(args, args.dataset)
 
     # init experiment name, Report, stats_dict, and saving/loading paths
     experiment_name = utils.add_experiment_name_to_args(args) # note this both returns experiment_name and adds it AND base_experiment_name to args
