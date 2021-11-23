@@ -135,6 +135,8 @@ You can substitute the experiment name for results for other conditions.
 
 ### Belief Graphs
 
+Add `--save_dir`, `--cache_dir`, and `--data_dir` arguments to the commands below per the instructions above.
+
 Write preds from FEVER model:  
 `python main.py --dataset FEVER --probing_style model --probe linear --model roberta-base --seed 0 --do_train false --do_eval true --write_preds_to_file true`
 
