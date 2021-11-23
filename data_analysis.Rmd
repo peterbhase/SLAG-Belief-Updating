@@ -1,0 +1,680 @@
+---
+title: "data analysis"
+author: ""
+date: ""
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(latex2exp)
+library(extrafont)
+library(extrafontdb)
+library(scales)
+```
+
+```{r read data}
+
+to_binary_numeric <- function(var){
+  if (is.na(var)){
+    return(NA)
+  }
+  if (var == 'True'){
+    return(1)
+  } 
+  if (var == 'False'){
+    return(0)
+  } 
+  if (var == 'true'){
+    return(1)
+  } 
+  if (var == 'false'){
+    return(0)
+  } 
+  if (as.numeric(var)){
+    return(1)
+  }
+  if (!as.numeric(var)){
+    return(0)
+  }
+  if (as.logical(var)){
+    return(1)
+  }
+  if (!as.logical(var)){
+    return(0)
+  }
+  return(1*var)
+}
+
+main_data <- read_csv('aggregated_results/learned_opt_main_data_stats.csv',
+                      col_types = cols_only(
+                          dataset = col_character(),
+                          seed = col_double(),
+                          id = col_double(),
+                          after_acc = col_character(),
+                          before_acc = col_double(),
+                          oth_acc = col_character(),
+                          oth_ret = col_character(),
+                          block_idx = col_double(),
+                          upd_suc = col_double(),
+                          upd_acc = col_double(),
+                          optimizer = col_character(),
+                          lr = col_double(),
+                          k_train = col_double(),
+                          k_test = col_double(),
+                          r_train = col_double(),
+                          r_test = col_double(),
+                          obj = col_character(),
+                          before_dep_acc = col_logical(),
+                          # after_odp_acc = col_skip(),
+                          dep_eq = col_logical(),
+                          dep_acc = col_logical(),
+                          oth_dep_eq = col_character(),
+                          oth_dep_acc = col_character(),
+                          oth_odp_acc = col_character(),
+                          before_par_eq = col_character(),
+                          before_par_eq_mean = col_double(),
+                          before_cons = col_double(),
+                          before_ind_acc = col_logical(),
+                          par_eq = col_character(),
+                          par_eq_mean = col_double(),
+                          cons = col_double(),
+                          oth_par_eq = col_character(),
+                          oth_par_eq_mean = col_character(),
+                          ind_acc = col_logical(),
+                          ind_ret = col_logical(),
+                          oth_ind_acc = col_character(),
+                          oth_ind_ret = col_character()
+                      ))
+
+k_ablation <-  read_csv('aggregated_results/learned_opt_k_ablation_data_stats.csv',
+                      col_types = cols_only(
+                          dataset = col_character(),
+                          seed = col_double(),
+                          id = col_double(),
+                          after_acc = col_character(),
+                          before_acc = col_double(),
+                          oth_acc = col_character(),
+                          oth_ret = col_character(),
+                          block_idx = col_double(),
+                          upd_suc = col_double(),
+                          upd_acc = col_double(),
+                          optimizer = col_character(),
+                          lr = col_double(),
+                          k_train = col_double(),
+                          k_test = col_double(),
+                          r_train = col_double(),
+                          r_test = col_double(),
+                          obj = col_character(),
+                          before_dep_acc = col_logical(),
+                          # after_odp_acc = col_skip(),
+                          dep_eq = col_logical(),
+                          dep_acc = col_logical(),
+                          oth_dep_eq = col_character(),
+                          oth_dep_acc = col_character(),
+                          oth_odp_acc = col_character(),
+                          before_par_eq = col_character(),
+                          before_par_eq_mean = col_double(),
+                          before_cons = col_double(),
+                          before_ind_acc = col_logical(),
+                          par_eq = col_character(),
+                          par_eq_mean = col_double(),
+                          cons = col_double(),
+                          oth_par_eq = col_character(),
+                          oth_par_eq_mean = col_character(),
+                          ind_acc = col_logical(),
+                          ind_ret = col_logical(),
+                          oth_ind_acc = col_character(),
+                          oth_ind_ret = col_character()
+                      )) %>%
+  filter(dataset == 'ZSRE')
+
+r_ablation <-  read_csv('aggregated_results/learned_opt_r_ablation_data_stats.csv',
+                      col_types = cols_only(
+                          dataset = col_character(),
+                          seed = col_double(),
+                          id = col_double(),
+                          after_acc = col_character(),
+                          before_acc = col_double(),
+                          oth_acc = col_character(),
+                          oth_ret = col_character(),
+                          block_idx = col_character(),
+                          upd_suc = col_character(),
+                          upd_acc = col_character(),
+                          optimizer = col_character(),
+                          lr = col_double(),
+                          k_train = col_double(),
+                          k_test = col_double(),
+                          r_train = col_double(),
+                          r_test = col_double(),
+                          obj = col_character(),
+                          before_dep_acc = col_logical(),
+                          # after_odp_acc = col_skip(),
+                          dep_eq = col_logical(),
+                          dep_acc = col_logical(),
+                          oth_dep_eq = col_character(),
+                          oth_dep_acc = col_character(),
+                          oth_odp_acc = col_character(),
+                          before_par_eq = col_character(),
+                          before_par_eq_mean = col_double(),
+                          before_cons = col_double(),
+                          before_ind_acc = col_logical(),
+                          par_eq = col_character(),
+                          par_eq_mean = col_double(),
+                          cons = col_double(),
+                          oth_par_eq = col_character(),
+                          oth_par_eq_mean = col_character(),
+                          ind_acc = col_logical(),
+                          ind_ret = col_logical(),
+                          oth_ind_acc = col_character(),
+                          oth_ind_ret = col_character()
+                      )) %>%
+  mutate(upd_suc = lapply(upd_suc, to_binary_numeric),
+         upd_suc = as.numeric(upd_suc),
+         upd_acc = as.numeric(upd_acc))
+
+base_r_ablation <-  read_csv('aggregated_results/base_optimizers_r_ablation_data_stats.csv',
+                      col_types = cols_only(
+                          dataset = col_character(),
+                          seed = col_double(),
+                          id = col_double(),
+                          after_acc = col_character(),
+                          before_acc = col_double(),
+                          oth_acc = col_character(),
+                          oth_ret = col_character(),
+                          block_idx = col_character(),
+                          upd_suc = col_character(),
+                          upd_acc = col_character(),
+                          optimizer = col_character(),
+                          lr = col_double(),
+                          k_train = col_double(),
+                          k_test = col_double(),
+                          r_train = col_double(),
+                          r_test = col_double(),
+                          obj = col_character(),
+                          before_dep_acc = col_logical(),
+                          dep_eq = col_logical(),
+                          dep_acc = col_logical(),
+                          oth_dep_eq = col_character(),
+                          oth_dep_acc = col_character(),
+                          oth_odp_acc = col_character(),
+                          before_par_eq = col_character(),
+                          before_par_eq_mean = col_double(),
+                          before_cons = col_double(),
+                          before_ind_acc = col_logical(),
+                          par_eq = col_character(),
+                          par_eq_mean = col_double(),
+                          cons = col_double(),
+                          oth_par_eq = col_character(),
+                          oth_par_eq_mean = col_character(),
+                          ind_acc = col_logical(),
+                          ind_ret = col_logical(),
+                          oth_ind_acc = col_character(),
+                          oth_ind_ret = col_character()
+                      )) %>%
+  mutate(upd_suc = lapply(upd_suc, to_binary_numeric),
+         upd_suc = as.numeric(upd_suc),
+         upd_acc = as.numeric(upd_acc))
+
+```
+
+```{r globals}
+
+theme = theme(axis.ticks = element_blank(),
+        axis.text = element_text(size=14, color='black'),
+        axis.title.y = element_text(vjust=.5, angle=0),
+        axis.line.x = element_line(colour = 'black', size = .6),
+        axis.line.y = element_line(colour = 'black', size = .6),
+        panel.background = element_blank(),
+        panel.border = element_blank(),
+        panel.grid = element_line(colour = '#DFDFDF', size = 0),
+        plot.title = element_text(hjust = 0.5),
+        text = element_text(size=16, family="serif"),
+        legend.text = element_text(size=16),
+        legend.box.background = element_blank(),
+        legend.position = "right")
+
+cbp1 <- c("#E69F00", "#56B4E9", "#009E73",
+          "#0072B2", "#D55E00", "#999999", "#F0E442",  "#CC79A7")
+
+```
+
+
+```{r check data statistics}
+
+# main data
+main_data %>% group_by(dataset) %>%
+  summarise(upd_suc=mean(upd_suc, na.rm=TRUE),
+            before_par_eq=mean(before_par_eq_mean, na.rm=TRUE),
+            par_eq=mean(par_eq_mean, na.rm=TRUE),
+            )
+
+```
+
+```{r make data: which beliefs are hard to update?}
+
+update_data_zsre <- main_data %>%
+  filter(!is.na(upd_suc),
+         dataset %in% c('ZSRE'))
+
+update_data_wiki <- main_data %>%
+  filter(!is.na(upd_suc),
+         dataset %in% c('ZSRE','Wikidata5m'))
+
+
+```
+
+```{r paper plots of update success rate ~ cons}
+
+cor.test(update_data_zsre$before_cons, update_data_zsre$upd_suc)
+cor.test(update_data_wiki$before_cons, update_data_wiki$upd_suc)
+
+combined_data <- main_data %>%
+  filter(!is.na(upd_suc),
+         dataset %in% c('ZSRE','Wikidata5m')) %>%
+  mutate(dataset == ifelse('zsRE', dataset == 'ZSRE', 'Wikidata5m')) %>%
+  select(dataset, before_cons, upd_suc) %>%
+  na.omit() %>% # not all zsre data has paraphrases
+  filter(!(before_cons > .8 & before_cons < 1)) %>% # only 62 points here, noisy category that we exclude without altering the interpretation of the results
+  mutate(binned_cons = ifelse(before_cons == 0, 0,
+                       ifelse(before_cons > 0 & before_cons < .2, .1,
+                       ifelse(before_cons >= .2 & before_cons < .4, .3,
+                       ifelse(before_cons >= .4 & before_cons < .6, .5,
+                       ifelse(before_cons >= .6 & before_cons < .8, .7,
+                       # ifelse(before_cons >= .8 & before_cons < 1, .9, 
+                       ifelse(before_cons == 1, 1, NA
+                       ))))))
+  ) %>%
+  group_by(dataset, binned_cons) %>%
+  summarise(upd_suc_mean = mean(upd_suc),
+            CI = 1.96 * sqrt(upd_suc_mean*(1-upd_suc_mean)/n()),
+            n=n())
+
+(plot <-
+  combined_data %>%
+  ggplot(aes(binned_cons, upd_suc_mean)) + 
+  geom_point(color=cbp1[2], size=2) + 
+  ylab("Update Success Rate") + 
+  ggtitle("Which Beliefs Are Hard to Update?") + 
+  scale_x_continuous(c(0,1), breaks=c(0, .25, .5, .75, 1),
+                     name="Pre-Update Consistency") +
+  coord_cartesian(ylim=c(.82, 1), xlim=c(0,1)) + 
+  geom_errorbar(aes(ymin=upd_suc_mean-CI, ymax=upd_suc_mean+CI, width=0)) + 
+  geom_smooth(method=lm, color=cbp1[2], se=F, linetype='dashed', alpha=.05, size=.5) + 
+  theme + facet_wrap( ~ dataset, nrow=2) + 
+  theme(axis.title.y = element_text(angle = 90, vjust=2.5))
+)
+
+ggsave(plot, filename = "figures/upd_suc_by_before_cons.pdf",
+ width = 5.1, height = 4, units = "in")
+
+```
+
+```{r correlation testing for before and after cons}
+
+cor.test(update_data_zsre$before_cons, update_data_zsre$cons)
+cor.test(update_data_wiki$before_cons, update_data_wiki$cons)
+
+combined_data <- main_data %>%
+  filter(!is.na(upd_suc),
+         dataset %in% c('ZSRE','Wikidata5m')) %>%
+  select(dataset, before_cons, cons) %>%
+  filter(!(before_cons >= .8 & before_cons < 1)) %>% # only 62 points here, noisy category that we
+  na.omit() %>% # not all zsre data has paraphrases
+  mutate(binned_cons = ifelse(before_cons == 0, 0,
+                       ifelse(before_cons > 0 & before_cons < .2, .1,
+                       ifelse(before_cons >= .2 & before_cons < .4, .3,
+                       ifelse(before_cons >= .4 & before_cons < .6, .5,
+                       ifelse(before_cons >= .6 & before_cons < .8, .7,
+                       ifelse(before_cons >= .8 & before_cons < 1, .9, 
+                       ifelse(before_cons == 1, 1, NA
+                       ))))))),
+         dataset = ifelse(dataset=='ZSRE', 'zsRE', dataset)
+         ) %>%
+  group_by(dataset, binned_cons) %>%
+  summarise(cons_mean = mean(cons),
+            CI = 1.96*sd(cons)/sqrt(n()),
+            n=n())
+
+(plot <-
+  combined_data %>%
+  ggplot(aes(binned_cons, cons_mean)) + 
+  geom_point(color=cbp1[5], size=2) + 
+  ylab("Post-Update Consistency") + 
+  ggtitle("Updates Improve Consistency Everywhere") + 
+  scale_x_continuous(c(0,1), breaks=c(0, .25, .5, .75, 1),
+                     name="Pre-Update Consistency") +
+  coord_cartesian(ylim=c(.68, 1), xlim=c(0,1)) + 
+  geom_errorbar(aes(ymin=cons_mean-CI, ymax=cons_mean+CI, width=0)) + 
+  geom_smooth(method=lm, color=cbp1[5], se=F, linetype='dashed', alpha=.05, size=.5) + 
+  theme + facet_wrap( ~ dataset, nrow=2) + 
+  theme(axis.title.y = element_text(angle = 90, vjust=2.5))
+)
+
+ggsave(plot, filename = "figures/after_cons_by_before_cons.pdf",
+  width = 5.1, height = 4, units = "in")
+
+```
+
+
+```{r read data: which beliefs are hard to retain?}
+
+zsre_data_sd0 <- read_csv('aggregated_results/data_stats_learned_opt_main_zsre_sd0.csv',
+                      col_types = cols_only(
+                          dataset = col_character(),
+                          seed = col_double(),
+                          id = col_double(),
+                          after_acc = col_character(),
+                          before_acc = col_double(),
+                          oth_acc = col_character(),
+                          oth_ret = col_character(),
+                          block_idx = col_double(),
+                          upd_suc = col_double(),
+                          upd_acc = col_double(),
+                          optimizer = col_character(),
+                          lr = col_double(),
+                          k_train = col_double(),
+                          k_test = col_double(),
+                          r_train = col_double(),
+                          r_test = col_double(),
+                          obj = col_character(),
+                          before_dep_acc = col_logical(),
+                          after_acc_mean = col_double(),
+                          after_ret = col_character(),
+                          after_ret_mean = col_double(),
+                          # after_odp_acc = col_skip(),
+                          dep_eq = col_logical(),
+                          dep_acc = col_logical(),
+                          oth_dep_eq = col_character(),
+                          oth_dep_acc = col_character(),
+                          oth_odp_acc = col_character(),
+                          before_par_eq = col_character(),
+                          before_par_eq_mean = col_double(),
+                          before_cons = col_double(),
+                          before_ind_acc = col_logical(),
+                          par_eq = col_character(),
+                          par_eq_mean = col_double(),
+                          cons = col_double(),
+                          oth_par_eq = col_character(),
+                          oth_par_eq_mean = col_character(),
+                          ind_acc = col_logical(),
+                          ind_ret = col_logical(),
+                          oth_ind_acc = col_character(),
+                          oth_ind_ret = col_character()
+                      ))
+
+fever_data_sd0 <- read_csv('aggregated_results/data_stats_learned_opt_main_fever_sd0_n100k.csv',
+                      col_types = cols_only(
+                          dataset = col_character(),
+                          seed = col_double(),
+                          id = col_double(),
+                          after_acc = col_character(),
+                          before_acc = col_double(),
+                          oth_acc = col_character(),
+                          oth_ret = col_character(),
+                          block_idx = col_double(),
+                          upd_suc = col_double(),
+                          upd_acc = col_double(),
+                          optimizer = col_character(),
+                          lr = col_double(),
+                          k_train = col_double(),
+                          k_test = col_double(),
+                          r_train = col_double(),
+                          r_test = col_double(),
+                          obj = col_character(),
+                          before_dep_acc = col_logical(),
+                          after_acc_mean = col_double(),
+                          after_ret = col_character(),
+                          after_ret_mean = col_double(),
+                          # after_odp_acc = col_skip(),
+                          label = col_double(),
+                          dep_eq = col_logical(),
+                          dep_acc = col_logical(),
+                          oth_dep_eq = col_character(),
+                          oth_dep_acc = col_character(),
+                          oth_odp_acc = col_character(),
+                          before_par_eq = col_character(),
+                          before_par_eq_mean = col_double(),
+                          before_cons = col_double(),
+                          before_ind_acc = col_logical(),
+                          par_eq = col_character(),
+                          par_eq_mean = col_double(),
+                          cons = col_double(),
+                          oth_par_eq = col_character(),
+                          oth_par_eq_mean = col_character(),
+                          ind_acc = col_logical(),
+                          ind_ret = col_logical(),
+                          oth_ind_acc = col_character(),
+                          oth_ind_ret = col_character()
+                      ))
+
+```
+
+```{r check ret vs. after_acc}
+
+zsre_data_sd0 %>%
+  group_by(before_acc) %>%
+  summarise(oth_ret = mean(after_ret_mean))
+
+fever_data_sd0 %>%
+  group_by(before_acc) %>%
+  summarise(oth_ret = mean(after_ret_mean))
+
+fever_data_sd0 %>%
+  group_by(label) %>%
+  summarise(oth_ret = mean(after_ret_mean))
+
+
+```
+
+
+```{r k ablation for zsre}
+
+k_data <- k_ablation %>%
+  select(dataset, k_train, k_test, upd_suc) %>%
+  na.omit() %>% 
+  group_by(k_train, k_test) %>% 
+  summarise(upd_suc = mean(upd_suc),
+            upd_suc_CI = 1.96 * sqrt(upd_suc*(1-upd_suc)/11975),
+            n=n()) %>%
+  mutate(k_matches = ifelse(k_train==k_test, 'yes', 'no'))
+
+(plot <- k_data %>%
+  ggplot(aes(k_test, upd_suc)) + 
+  geom_line(aes(col=k_matches), size=.6) + 
+  geom_errorbar(aes(ymin=upd_suc-upd_suc_CI, ymax=upd_suc+upd_suc_CI, width=.3)) + # clutters plot since they are overlapping slightly   
+  ylim(c(.9, .96)) +
+  xlab(TeX("$\\textit{k}_{test}$")) +
+  ylab(TeX("Update Success Rate")) + 
+  ggtitle(TeX("Ablation by $\\textit{k}$")) +
+  scale_x_continuous(breaks=c(1,2,4,6,8,10), labels=c(1,2,4,6,8,10)) +
+  scale_color_manual(values = cbp1, name = TeX("Training Obj. ($\\textit{k}_{train}$)"),
+                   labels = c("1", "Matches Test")) +
+  theme +
+  theme(axis.title.y = element_text(angle = 90, vjust=2.5)))
+
+ggsave(plot, filename = "figures/ablation_by_k.pdf",
+  width = 7, height = 4, units = "in")
+
+```
+
+```{r r ablation single dataset}
+
+r_data <- r_ablation %>%
+  filter(dataset=='FEVER') %>%
+  select(dataset, r_train, r_test, upd_suc) %>%
+  na.omit() %>% 
+  group_by(dataset, r_train, r_test) %>% 
+  summarise(upd_suc = mean(upd_suc),
+            upd_suc_CI = 1.96 * sqrt(upd_suc*(1-upd_suc)/11975),
+            n=n()) %>%
+  mutate(r_matches = ifelse(r_train==r_test, 'yes', 'no'))# %>%
+  # ungroup() %>%
+  # add_row(dataset='ZSRE', r_train=1, r_test=1, r_matches='no', upd_suc=0.9455, upd_suc_CI=.004)
+
+base_r_data <- base_r_ablation %>%
+  filter(dataset=='FEVER') %>%
+  select(dataset, r_train, r_test, upd_suc) %>%
+  na.omit() %>% 
+  group_by(dataset, r_train, r_test) %>% 
+  summarise(upd_suc = mean(upd_suc),
+            upd_suc_CI = 1.96 * sqrt(upd_suc*(1-upd_suc)/11975),
+            n=n()) %>%
+  mutate(r_matches = 'baseline')
+
+
+comb_data <- r_data %>%
+  bind_rows(base_r_data)
+
+(plot <- comb_data %>%
+  ggplot(aes(r_test, upd_suc)) + 
+  geom_line(aes(col=r_matches), size=.6) + 
+  # geom_errorbar(aes(ymin=upd_suc-upd_suc_CI, ymax=upd_suc+upd_suc_CI, width=1)) + # clutters plot since scale is so small
+  ylim(c(.0, 1)) +
+  xlab(TeX("$\\textit{r}_{test}$")) +
+  ylab(TeX("Update Success Rate")) + 
+  ggtitle(TeX("Ablation by $\\textit{r}$")) +
+  scale_x_continuous(breaks=c(1,2,4,6,8,10), labels=c(1,2,4,6,8,10)) +
+  scale_y_continuous(breaks=seq(0,1,.1), labels=seq(0,1,.1)) +
+  coord_cartesian(ylim=c(0, .99)) + 
+  scale_color_manual(values = cbp1, name = TeX("Method by $\\textit{r}_{train}$"),
+                   labels = c("Baseline", "r=1", "r matches test")) +
+  theme +
+  theme(axis.title.y = element_text(angle = 90, vjust=2.5)))
+
+
+```
+
+```{r r ablation combined}
+
+r_data <- r_ablation %>%
+  select(dataset, r_train, r_test, upd_suc) %>%
+  na.omit() %>% 
+  group_by(dataset, r_train, r_test) %>% 
+  summarise(upd_suc = mean(upd_suc),
+            upd_suc_CI = 1.96 * sqrt(upd_suc*(1-upd_suc)/11975),
+            n=n()) %>%
+  mutate(r_matches = ifelse(r_train==r_test, 'yes', 'no')) %>%
+  ungroup() %>%
+  add_row(dataset='ZSRE', r_train=1, r_test=1, r_matches='no', upd_suc=0.9455, upd_suc_CI=.004) %>%
+  add_row(dataset='FEVER', r_train=1, r_test=1, r_matches='no', upd_suc=0.995, upd_suc_CI=0.001)
+
+base_r_data <- base_r_ablation %>%
+  select(dataset, r_train, r_test, upd_suc) %>%
+  na.omit() %>% 
+  group_by(dataset, r_train, r_test) %>% 
+  summarise(upd_suc = mean(upd_suc),
+            upd_suc_CI = 1.96 * sqrt(upd_suc*(1-upd_suc)/11975),
+            n=n()) %>%
+  mutate(r_matches = 'baseline')
+
+
+comb_data <- r_data %>%
+  bind_rows(base_r_data)
+
+(plot <- comb_data %>%
+  ggplot(aes(r_test, upd_suc)) + 
+  geom_line(aes(col=r_matches), size=.6) + 
+  # geom_errorbar(aes(ymin=upd_suc-upd_suc_CI, ymax=upd_suc+upd_suc_CI, width=1)) + # clutters plot since scale is so small
+  xlab(TeX("$\\textit{r}_{test}$")) +
+  ylab(TeX("Update Success Rate")) + 
+  ggtitle(TeX("Ablation by $\\textit{r}$")) +
+  scale_x_continuous(breaks=c(1,2,4,6,8,10), labels=c(1,2,4,6,8,10)) +
+  scale_y_continuous(breaks=seq(0,1,.1), labels=seq(0,1,.1)) +
+  # coord_cartesian(ylim=c(0, .99)) +
+  scale_color_manual(values = cbp1, name = TeX("Method by $\\textit{r}_{train}$"),
+                   labels = c("Baseline", "r=1", "r matches test")) +
+  theme +
+  theme(axis.title.y = element_text(angle = 90, vjust=2.5)) + 
+  facet_wrap(~ dataset, nrow=1)
+)
+
+ggsave(plot, filename = "figures/ablation_by_r.pdf",
+  width = 10, height = 4, units = "in")
+
+
+```
+
+
+```{r memory usage}
+
+mem_data <- read_csv('aggregated_results/memory_ablation.csv')
+
+r_mem <- mem_data %>% 
+  filter(k==1) %>%
+  unique()
+
+k_mem <- mem_data %>% 
+  filter(r==1) %>%
+  unique()
+
+(plot <- r_mem %>%
+  ggplot(aes(r, mem)) + 
+  geom_line(size=.9) + 
+  ylim(c(0, 32)) +
+  xlab(TeX("$\\textit{r}$")) +
+  ylab(TeX("Memory Used (GB)")) + 
+  ggtitle(TeX("Memory Usage by $\\textit{r}$")) +
+  scale_x_continuous(breaks=c(1,2,4,6,8,10), labels=c(1,2,4,6,8,10)) +
+  geom_abline(slope=0, intercept=4.80, color='orange', linetype='dashed', size=.9) + 
+  theme +
+  theme(axis.title.y = element_text(angle = 90, vjust=2.5)))
+
+ggsave(plot, filename = "figures/memory_by_r.pdf",
+  width = 7, height = 4, units = "in")
+
+(plot <- k_mem %>%
+  ggplot(aes(k, mem)) + 
+  geom_line(size=.9) + 
+  ylim(c(0, 32)) +
+  xlab(TeX("$\\textit{k}$")) +
+  ylab(TeX("Memory Used (GB)")) + 
+  ggtitle(TeX("Memory Usage by $\\textit{k}$")) +
+  scale_x_continuous(breaks=c(1,2,4,6,8,10), labels=c(1,2,4,6,8,10)) +
+  geom_abline(slope=0, intercept=4.80, color='orange', linetype='dashed', size=.9) + 
+  theme +
+  theme(axis.title.y = element_text(angle = 90, vjust=2.5)))
+
+ggsave(plot, filename = "figures/memory_by_k.pdf",
+  width = 7, height = 4, units = "in")
+
+
+```
+
+
+
+```{r learning curve}
+
+learning_curve_data <- read_csv('aggregated_results/learned_opt_sample_efficiency_summary_stats_ZSRE.csv') %>%
+  mutate(num_train_points=as.double(num_train_points),
+         test_upd_suc=as.double(test_upd_suc),
+         log_n = log10(num_train_points)
+  ) %>% 
+  group_by(num_train_points) %>%
+  summarise(test_upd_suc = mean(test_upd_suc),
+            CI = 1.96 * 100 * sqrt(.01*test_upd_suc*(1-.01*test_upd_suc)/15163))
+         
+(plot <- learning_curve_data %>%
+  ggplot(aes(num_train_points, test_upd_suc)) + 
+  geom_line(size=.9) + 
+  ylim(c(85, 100)) +
+  xlab(TeX("$$\\textit{n}$$")) +
+  # xlab(TeX("$log$_{10}n$(\\textit{n})$")) +
+  ylab(TeX("Main Input Update Success")) + 
+  ggtitle(TeX("Learning Curve for zsRE")) +
+  # scale_x_continuous(breaks=trans_breaks("log10", function(x) x),
+                     # labels=trans_format("log10", math_format(10^.x))) +
+  scale_x_log10(
+   breaks = scales::trans_breaks("log10", function(x) 10^x),
+   labels = scales::trans_format("log10", scales::math_format(10^.x))
+ ) +
+  geom_errorbar(aes(ymin=test_upd_suc-CI, ymax=test_upd_suc+CI, width=.03)) + 
+  theme +
+  theme(axis.title.y = element_text(angle = 90, vjust=2.5)))
+
+ggsave(plot, filename = "figures/learning_curve.pdf",
+  width = 7, height = 4, units = "in")
+
+
+```
