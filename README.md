@@ -33,13 +33,14 @@ If you wish to visualize belief graphs, you should also install a few packages a
 
 ## Making Data
 
-We include the data splits we use in `data/` (though the train split for Wikidata5m is divided into two files that need to be locally combined.) To construct the datasets from scratch, you can follow a few steps:
+We include the data splits from the paper in `data/` (though the train split for Wikidata5m is divided into two files that need to be locally combined.) To construct the datasets from scratch, you can follow a few steps:
 
-1. Set the `DATA_DIR` environment variable to where you'd like the data to be stored. Set the `CODE_DIR` to point to this directory.
+1. Set the `DATA_DIR` environment variable to where you'd like the data to be stored. Set the `CODE_DIR` to point to the directory where this code is.
 2. Run the following blocks of code
 
 Make FEVER and ZSRE 
-`cd $DATA_DIR
+```
+cd $DATA_DIR
 git clone https://github.com/facebookresearch/KILT.git
 cd KILT
 mkdir data
@@ -47,19 +48,23 @@ python scripts/download_all_kilt_data.py
 mv data/* ./
 cd $CODE_DIR
 python data_utils/shuffle_fever_splits.py
-python data_utils/shuffle_zsre_splits.py`
+python data_utils/shuffle_zsre_splits.py
+```
 
-Make Leap-Of-Thought 
-`cd $DATA_DIR
+Make Leap-Of-Thought  
+```
+cd $DATA_DIR
 git clone https://github.com/alontalmor/LeapOfThought.git
 cd LeapOfThought
 python -m LeapOfThought.run -c Hypernyms --artiset_module soft_reasoning -o build_artificial_dataset -v training_mix -out taxonomic_reasonings.jsonl.gz
 gunzip taxonomic_reasonings_training_mix_train.jsonl.gz taxonomic_reasonings_training_mix_dev.jsonl.gz taxonomic_reasonings_training_mix_test.jsonl.gz taxonomic_reasonings_training_mix_meta.jsonl.gz
 cd $CODE_DIR
-python data_utils/shuffle_leapofthought_splits.py`
+python data_utils/shuffle_leapofthought_splits.py
+```
 
-Make Wikidata5m 
-`cd $DATA_DIR
+Make Wikidata5m  
+```
+cd $DATA_DIR
 mkdir Wikidata5m
 cd Wikidata5m
 wget https://www.dropbox.com/s/6sbhm0rwo4l73jq/wikidata5m_transductive.tar.gz
@@ -67,7 +72,8 @@ wget https://www.dropbox.com/s/lnbhc8yuhit4wm5/wikidata5m_alias.tar.gz
 tar -xvzf wikidata5m_transductive.tar.gz
 tar -xvzf wikidata5m_alias.tar.gz
 cd $CODE_DIR
-python data_utils/filter_wikidata.py`
+python data_utils/filter_wikidata.py
+```
 
 ## Experiment Replication
 
@@ -75,8 +81,10 @@ Experiment commands require a few arguments: `--data_dir` points to where the da
 
 To train the task and prepare the necessary data for training learned optimizers, run:
 
-`python run_jobs.py -e task_model --seeds 5 --dataset all --data_dir $DATA_DIR --save_dir $DATA_DIR --cache_dir $DATA_DIR
-python run_jobs.py -e write_LeapOfThought_preds --seeds 5 --dataset LeapOfThought --do_train false --data_dir $DATA_DIR --save_dir $DATA_DIR --cache_dir $DATA_DIR`
+```
+python run_jobs.py -e task_model --seeds 5 --dataset all --data_dir $DATA_DIR --save_dir $DATA_DIR --cache_dir $DATA_DIR
+python run_jobs.py -e write_LeapOfThought_preds --seeds 5 --dataset LeapOfThought --do_train false --data_dir $DATA_DIR --save_dir $DATA_DIR --cache_dir $DATA_DIR
+```
 
 To get the main experiments in a single-update setting, run:
 
@@ -88,21 +96,26 @@ For results in a sequential-update setting (with r=10) run:
 
 To get the corresponding off-the-shelf optimizer baselines for these experiments, run
 
-`python run_jobs.py -e base_optimizers --seeds 5 --do_train false  --data_dir $DATA_DIR --save_dir $DATA_DIR --cache_dir $DATA_DIR
-python run_jobs.py -e base_optimizers_r_main --seeds 5 --do_train false  --data_dir $DATA_DIR --save_dir $DATA_DIR --cache_dir $DATA_DIR`
+```
+python run_jobs.py -e base_optimizers --seeds 5 --do_train false  --data_dir $DATA_DIR --save_dir $DATA_DIR --cache_dir $DATA_DIR
+python run_jobs.py -e base_optimizers_r_main --seeds 5 --do_train false  --data_dir $DATA_DIR --save_dir $DATA_DIR --cache_dir $DATA_DIR
+```
 
 To get ablations across values of r for the learned optimizer and baselines, run
 
-`python run_jobs.py -e learned_opt_r_ablation --seeds 1 --data_dir $DATA_DIR --save_dir $DATA_DIR --cache_dir $DATA_DIR
-python run_jobs.py -e base_optimizers_r_ablation --seeds 1 --do_train false  --data_dir $DATA_DIR --save_dir $DATA_DIR --cache_dir $DATA_DIR`
+```python run_jobs.py -e learned_opt_r_ablation --seeds 1 --data_dir $DATA_DIR --save_dir $DATA_DIR --cache_dir $DATA_DIR
+python run_jobs.py -e base_optimizers_r_ablation --seeds 1 --do_train false  --data_dir $DATA_DIR --save_dir $DATA_DIR --cache_dir $DATA_DIR
+```
 
 Next we give commands for for ablations across k, the choice of training labels, the choice of evaluation labels, training objective terms, and a comparison to the objective from de Cao (in order):
 
-`python run_jobs.py -e learned_opt_k_ablation --seeds 1 --dataset ZSRE  --data_dir $DATA_DIR --save_dir $DATA_DIR --cache_dir $DATA_DIR
+```
+python run_jobs.py -e learned_opt_k_ablation --seeds 1 --dataset ZSRE  --data_dir $DATA_DIR --save_dir $DATA_DIR --cache_dir $DATA_DIR
 python run_jobs.py -e learned_opt_label_ablation --seeds 1 --dataset ZSRE --data_dir $DATA_DIR --save_dir $DATA_DIR --cache_dir $DATA_DIR
 python run_jobs.py -e learned_opt_eval_ablation --seeds 1 --dataset ZSRE  --data_dir $DATA_DIR --save_dir $DATA_DIR --cache_dir $DATA_DIR
 python run_jobs.py -e learned_opt_objective_ablation --seeds 1 --dataset all  --data_dir $DATA_DIR --save_dir $DATA_DIR --cache_dir $DATA_DIR
-python run_jobs.py -e learned_opt_de_cao --seeds 5 --dataset all --data_dir $DATA_DIR --save_dir $DATA_DIR --cache_dir $DATA_DIR`
+python run_jobs.py -e learned_opt_de_cao --seeds 5 --dataset all --data_dir $DATA_DIR --save_dir $DATA_DIR --cache_dir $DATA_DIR
+```
 
 ## Analysis
 
@@ -122,25 +135,25 @@ You can substitute the experiment name for results for other conditions.
 
 ### Belief Graphs
 
-Write preds from FEVER model
+Write preds from FEVER model:  
 `python main.py --dataset FEVER --probing_style model --probe linear --model roberta-base --seed 0 --do_train false --do_eval true --write_preds_to_file true`
 
-Write graph to file
+Write graph to file:  
 `python main.py --dataset FEVER --probing_style model --probe linear --model roberta-base --seed 0 --do_train false --do_eval true --test_batch_size 64 --update_eval_truthfully false --fit_to_alt_labels true --update_beliefs true --optimizer adamw --lr 1e-6 --update_steps 100 --update_all_points true --write_graph_to_file true --use_dev_not_test false --num_random_other 10444`
 
-Analyze graph
+Analyze graph:  
 `python main.py --dataset FEVER --probing_style model --probe linear --model roberta-base --seed 0 --test_batch_size 64 --update_eval_truthfully false --fit_to_alt_labels true --update_beliefs true --use_dev_not_test false --optimizer adamw --lr 1e-6 --update_steps 100 --do_train false --do_eval false --pre_eval false --do_graph_analysis true`
 
-Combine LeapOfThought Main Inputs and Entailed Data 
+Combine LeapOfThought Main Inputs and Entailed Data:  
 `python data_utils/combine_leapofthought_data.py`
 
-Write LeapOfThought preds to file
+Write LeapOfThought preds to file:  
 `python main.py --dataset LeapOfThought --probing_style model --probe linear --model roberta-base --seed 0 --do_train false --do_eval true --write_preds_to_file true --leapofthought_main main`
 
-Write graph for LeapOfThought
+Write graph for LeapOfThought:  
 `python main.py --dataset LeapOfThought --leapofthought_main main --probing_style model --probe linear --model roberta-base --seed 0 --do_train false --do_eval true --test_batch_size 64 --update_eval_truthfully false --fit_to_alt_labels true --update_beliefs true --optimizer sgd --update_steps 100 --lr 1e-2 --update_all_points true --write_graph_to_file true --use_dev_not_test false --num_random_other 8642`
 
-Analyze graph (add `--num_eval_points 2000` to compute update-transitivity)
+Analyze graph (add `--num_eval_points 2000` to compute update-transitivity):  
 `python main.py --dataset LeapOfThought --leapofthought_main main --probing_style model --probe linear --model roberta-base --seed 0 --do_train false --do_eval true --test_batch_size 64 --update_eval_truthfully false --fit_to_alt_labels true --update_beliefs true --optimizer sgd --update_steps 100 --lr 1e-2 --do_train false --do_eval false --pre_eval false --do_graph_analysis true`
 
 ### Plots
