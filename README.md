@@ -79,7 +79,7 @@ python data_utils/filter_wikidata.py
 
 Experiment commands require a few arguments: `--data_dir` points to where the data is. `--save_dir` points to where models should be saved. `--cache_dir` points to where pretrained models will be stored. `--gpu` indicates the GPU device number. `--seeds` indicates how many seeds per condition to run. We give commands below for the experiments in the paper, saving everything in `$DATA_DIR`.
 
-To train the task and prepare the necessary data for training learned optimizers, run:
+To train the task models and prepare the necessary data for training learned optimizers, run:
 
 ```
 python run_jobs.py -e task_model --seeds 5 --dataset all --data_dir $DATA_DIR --save_dir $DATA_DIR --cache_dir $DATA_DIR
