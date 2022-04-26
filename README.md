@@ -1,4 +1,4 @@
-This is the codebase for the paper: [Do Language Models Have Beliefs? Methods for Detecting, Updating, and Visualizing Model Beliefs](link)
+This is the codebase for the paper: [Do Language Models Have Beliefs? Methods for Detecting, Updating, and Visualizing Model Beliefs](https://arxiv.org/pdf/2111.13654.pdf)
 
 ## Directory Structure
 
