@@ -9,7 +9,7 @@ import time
 import os
 import sys
 import jsonlines
-from utils import str2bool, Report, safe_load_base_model, safe_load_final_model
+from utils import str2bool, Report, safe_load_base_model, safe_load_final_model, add_dataset_config_to_args
 from transformers import AutoModelForSeq2SeqLM, AutoModelWithLMHead, AutoModel, AutoTokenizer
 from transformers import AdamW, get_scheduler, get_linear_schedule_with_warmup
 from torch.optim import SGD, RMSprop
@@ -940,7 +940,10 @@ if __name__ == '__main__':
     if args.learned_successive_updates > 1 and args.do_train: assert args.grad_accumulation_factor >= args.learned_successive_updates, "grad accum factor must be at least learned_successive_updates"
     if args.use_learned_optimizer and args.num_successive_updates > 1 and args.do_train:
         print("\nNote that train update success is NOT calculated after num_successive_updates, but rather after every single update, so not comparable to dev upd_suc \n")
-
+    
+    # add dataset-specific parameters to args
+    utils.add_dataset_config_to_args(args, args.dataset)
+    
     # init experiment name, Report, stats_dict, and saving/loading paths
     experiment_name = utils.add_experiment_name_to_args(args) # note this both returns experiment_name and adds it AND base_experiment_name to args
     if args.get_experiment_name_only:
